@@ -1,0 +1,11 @@
+<resources>
+    <string name="app_name">TodoListManager</string>
+    <string name="meun_button_1">Add</string>
+    <string name="dialog_title">New task</string>
+    <string name="positive_dialog">Add</string>
+    <string name="negative_dialog">Cancel</string>
+    <string name="dialog_hint">What do you need to do</string>
+    <string name="alert">Alert</string>
+    <string name="alert_delete_message">Are you sure you want to delete?</string>
+
+</resources>
