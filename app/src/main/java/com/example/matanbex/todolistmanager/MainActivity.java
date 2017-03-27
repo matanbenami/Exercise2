@@ -1,12 +1,16 @@
 package com.example.matanbex.todolistmanager;
 
+import android.app.DatePickerDialog;
 import android.app.FragmentManager;
 import android.content.Context;
+import android.content.Intent;
+import android.net.Uri;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.view.ContextMenu;
 import android.view.GestureDetector;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -15,6 +19,8 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Toast;
 import java.util.ArrayList;
+import java.util.Calendar;
+
 import android.support.v4.app.DialogFragment;
 
 
@@ -25,7 +31,10 @@ public class MainActivity extends AppCompatActivity implements NoticeDialogFragm
     private RecyclerView rv;
     private RVAdapter adapter;
     private int PositionToDelete;
-    FloatingActionButton f;
+    private FloatingActionButton f;
+    private int mYear, mMonth, mDay;
+    private String numToCall;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -40,6 +49,12 @@ public class MainActivity extends AppCompatActivity implements NoticeDialogFragm
         RecyclerView.LayoutManager llm = new LinearLayoutManager(getApplicationContext());
         rv.setLayoutManager(llm);
         rv.setAdapter(adapter);
+
+        final Calendar c = Calendar.getInstance();
+        mYear = c.get(Calendar.YEAR);
+        mMonth = c.get(Calendar.MONTH);
+        mDay = c.get(Calendar.DAY_OF_MONTH);
+        registerForContextMenu(rv);
         f = (FloatingActionButton)findViewById(R.id.fab);
         f.setOnClickListener(new View.OnClickListener(){
             @Override
@@ -50,17 +65,34 @@ public class MainActivity extends AppCompatActivity implements NoticeDialogFragm
         rv.addOnItemTouchListener(new RecyclerItemClickListener(this, rv, new RecyclerItemClickListener.OnItemClickListener() {
             @Override
             public void onItemClick(View view, int position) {
-
             }
 
             @Override
             public void onLongItemClick(View view, int position) {
                 PositionToDelete = position;
-                createRemoveDialog();
             }
         }));
 
     }
+
+
+    @Override
+    public boolean onContextItemSelected(MenuItem item){
+        if(item.getTitle()== "Call"){
+
+            Intent intent = new Intent(Intent.ACTION_DIAL);
+            intent.setData(Uri.parse("tel:" + RVAdapter.mPhoneNumber ));
+            startActivity(intent);
+        }
+        else if(item.getTitle()=="Remove"){
+            createRemoveDialog();
+        }else{
+            return false;
+        }
+        return true;
+    }
+
+
 
     @Override
     public void onSaveInstanceState(Bundle outState) {
@@ -101,12 +133,14 @@ public class MainActivity extends AppCompatActivity implements NoticeDialogFragm
 
 
     @Override
-    public void onDialogPositiveClick(String answer) {
+    public void onDialogPositiveClick(String answer, String date) {
 
         if (!answer.equals("")){
-            messagesList.add(answer);
+            messagesList.add(answer+ " " + date);
             adapter.notifyDataSetChanged();
-        }else
+
+        }
+        else
         {
             Toast.makeText(getApplicationContext(), "Can't add empty task", Toast.LENGTH_LONG).show();
         }

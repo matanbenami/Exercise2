@@ -8,6 +8,7 @@ import android.os.Bundle;
 import android.support.v7.app.AlertDialog;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.widget.DatePicker;
 import android.widget.EditText;
 
 public class NoticeDialogFragment extends DialogFragment {
@@ -18,7 +19,7 @@ public class NoticeDialogFragment extends DialogFragment {
          * implement this interface in order to receive event callbacks.
          * Each method passes the DialogFragment in case the host needs to query it. */
     public interface NoticeDialogListener {
-        public void onDialogPositiveClick(String answer);
+        public void onDialogPositiveClick(String answer, String date);
     }
 
     // Use this instance of the interface to deliver action events
@@ -44,11 +45,22 @@ public class NoticeDialogFragment extends DialogFragment {
         LayoutInflater inflater = getActivity().getLayoutInflater();
         final View inf = inflater.inflate(R.layout.dialog_add_event, null);
         final EditText answer = (EditText) inf.findViewById(R.id.answer);
+        final DatePicker datePicker = (DatePicker) inf.findViewById(R.id.date_picker);
+        datePicker.setMinDate(System.currentTimeMillis() - 1000);
         builder.setTitle(R.string.dialog_title).setView(inf)
                 .setPositiveButton(R.string.positive_dialog, new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
-                        mListener.onDialogPositiveClick(answer.getText().toString());
+
+                        StringBuilder stringBuilder = new StringBuilder();
+                        stringBuilder.append(' ');
+                        stringBuilder.append(datePicker.getDayOfMonth());
+                        stringBuilder.append('/');
+                        stringBuilder.append(datePicker.getMonth() + 1);
+                        stringBuilder.append('/');
+                        stringBuilder.append(datePicker.getYear());
+
+                        mListener.onDialogPositiveClick(answer.getText().toString(), stringBuilder.toString());
                     }
                 })
                 .setNegativeButton(R.string.negative_dialog, new DialogInterface.OnClickListener() {
