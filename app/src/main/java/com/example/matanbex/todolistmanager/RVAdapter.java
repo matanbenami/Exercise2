@@ -1,6 +1,8 @@
 package com.example.matanbex.todolistmanager;
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.SyncStatusObserver;
+import android.database.Cursor;
 import android.graphics.Color;
 import android.support.v4.app.Fragment;
 import android.support.v4.content.ContextCompat;
@@ -28,10 +30,14 @@ public class RVAdapter extends RecyclerView.Adapter<RVAdapter.CustomViewHolder> 
     private static final int RETURN_MESSAGE = 1;
     private static final int RETURN_DATE = 0;
     static String mPhoneNumber ="";
+    TodoDatabaseHelper DBHelper;
+
 
     public RVAdapter(Context context, List<String> messageItemList) {
         this.messagesItemList = messageItemList;
         this.mContext = context;
+        DBHelper = new TodoDatabaseHelper(context);
+
 
     }
 
@@ -56,8 +62,31 @@ public class RVAdapter extends RecyclerView.Adapter<RVAdapter.CustomViewHolder> 
             customViewHolder.todoMessage.setBackgroundColor(ContextCompat.getColor(mContext, R.color.item_2));
             customViewHolder.date.setBackgroundColor(ContextCompat.getColor(mContext, R.color.item_2));
         }
-        customViewHolder.todoMessage.setText(splitMessage(todo, RETURN_MESSAGE));
-        customViewHolder.date.setText(splitMessage(todo, RETURN_DATE));
+        String message = splitMessage(todo, RETURN_MESSAGE);
+        String date = splitMessage(todo, RETURN_DATE);
+        customViewHolder.todoMessage.setText(message);
+        customViewHolder.date.setText(date);
+//        System.out.println("*******************");
+//        insertToDB(message, date);
+
+    }
+
+    private void insertToDB(String message, String date)
+    {
+        //DBHelper.getReadableDatabase().delete(TodoListTable.TABLE_TODO, null,null);
+        ContentValues values = new ContentValues();
+        values.put(TodoListTable.COLUMN_DATE, date);
+        values.put(TodoListTable.COLUMN_MESSAGE, message);
+
+        DBHelper.getWritableDatabase().insert(TodoListTable.TABLE_TODO, null, values);
+        values.clear();
+        Cursor cursor = DBHelper.getReadableDatabase().query(TodoListTable.TABLE_TODO, null, null, null, null,null, null);
+        while (cursor.moveToNext())
+        {
+            System.out.println(cursor.getString(0) +"---"+ cursor.getString(1) +"---" +cursor.getString(2));
+        }
+        //cursor.close();
+
     }
 
     private String splitMessage(String message, int messageOrDate){

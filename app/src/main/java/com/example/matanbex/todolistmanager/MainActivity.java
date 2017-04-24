@@ -2,8 +2,11 @@ package com.example.matanbex.todolistmanager;
 
 import android.app.DatePickerDialog;
 import android.app.FragmentManager;
+import android.content.ContentProvider;
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
+import android.database.Cursor;
 import android.net.Uri;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AppCompatActivity;
@@ -34,18 +37,21 @@ public class MainActivity extends AppCompatActivity implements NoticeDialogFragm
     private FloatingActionButton f;
     private int mYear, mMonth, mDay;
     private String numToCall;
-
+    TodoDatabaseHelper DBHelper;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
         setContentView(R.layout.activity_main);
         if (savedInstanceState != null){
             messagesList = savedInstanceState.getStringArrayList(LIST);
         }
+
         rv = (RecyclerView) findViewById(R.id.recycler_view);
         adapter = new RVAdapter(MainActivity.this, messagesList);
+
+        insertFromDB();
+        DBHelper = new TodoDatabaseHelper(getApplicationContext());
         RecyclerView.LayoutManager llm = new LinearLayoutManager(getApplicationContext());
         rv.setLayoutManager(llm);
         rv.setAdapter(adapter);
@@ -75,6 +81,20 @@ public class MainActivity extends AppCompatActivity implements NoticeDialogFragm
 
     }
 
+    private void insertFromDB(){
+        Cursor cursor = adapter.DBHelper.getReadableDatabase().query(TodoListTable.TABLE_TODO, null, null, null, null,null, null);
+        if (cursor.getCount() == 0)
+        {
+            return;
+        }
+        while (cursor.moveToNext())
+        {
+            messagesList.add(cursor.getString(1)+ " " + cursor.getString(2));
+            adapter.notifyDataSetChanged();
+            System.out.println(cursor.getString(0) +"---"+ cursor.getString(1) +"---" +cursor.getString(2));
+        }
+        cursor.close();
+    }
 
     @Override
     public boolean onContextItemSelected(MenuItem item){
@@ -138,6 +158,8 @@ public class MainActivity extends AppCompatActivity implements NoticeDialogFragm
         if (!answer.equals("")){
             messagesList.add(answer+ " " + date);
             adapter.notifyDataSetChanged();
+            insertToDB(answer, date);
+            //DBHelper.getReadableDatabase().delete(TodoListTable.TABLE_TODO, null,null);
 
         }
         else
@@ -147,10 +169,58 @@ public class MainActivity extends AppCompatActivity implements NoticeDialogFragm
 
     }
 
+    private void insertToDB(String message, String date)
+    {
+        //DBHelper.getReadableDatabase().delete(TodoListTable.TABLE_TODO, null,null);
+        ContentValues values = new ContentValues();
+        values.put(TodoListTable.COLUMN_DATE, date);
+        values.put(TodoListTable.COLUMN_MESSAGE, message);
+
+        DBHelper.getWritableDatabase().insert(TodoListTable.TABLE_TODO, null, values);
+        values.clear();
+        Cursor cursor = DBHelper.getReadableDatabase().query(TodoListTable.TABLE_TODO, null, null, null, null,null, null);
+        while (cursor.moveToNext())
+        {
+            System.out.println(cursor.getString(0) +"---"+ cursor.getString(1) +"---" +cursor.getString(2));
+        }
+        cursor.close();
+
+    }
+
     @Override
     public void onRemoveDialogPositiveClick() {
+        String date = splitMessage(messagesList.get(PositionToDelete), 0);
+        String message = splitMessage(messagesList.get(PositionToDelete), 1);
+        System.out.println("////******-----------" + message +"[[[");
         messagesList.remove(PositionToDelete);
+        deleteFromDB(message.substring(0, message.length()-1), date);
         adapter.notifyDataSetChanged();
+    }
+
+    private String splitMessage(String message, int messageOrDate){
+        String ret = "";
+        String delims = " ";
+        String[] tokens = message.split(delims);
+        int len = tokens.length;
+        if (messageOrDate == 1){
+            for (int i = 0; i < len - 1; i++){
+                ret += (tokens[i]);
+                ret += " ";
+            }
+            ret = ret.substring(0, ret.length() - 1);
+        }
+        else{
+
+            ret = tokens[len - 1];
+        }
+        return ret;
+    }
+
+    private void deleteFromDB(String message, String date){
+        String selection = TodoListTable.COLUMN_MESSAGE + " LIKE ? AND " + TodoListTable.COLUMN_DATE + " LIKE ?";
+        String[] selectionArgs = {message, " " + date};
+        DBHelper.getWritableDatabase().delete(TodoListTable.TABLE_TODO, selection, selectionArgs);
+
     }
 
 
